@@ -26,13 +26,13 @@
     overflow:hidden;
   }
   .stage{
-    height:100vh;
+    min-height:100vh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     position:relative;
-    padding:24px;
+    padding:16px 24px 56px;
   }
 
   /* ---- setup bar ---- */
@@ -45,6 +45,9 @@
     border-radius:14px;
     padding:8px 16px;
     margin-bottom:16px;
+    position:relative;
+    z-index:5;
+    flex:none;
     transition:opacity .35s ease, transform .35s ease;
   }
   .setup.hidden{
@@ -92,16 +95,18 @@
   /* ---- ring + clock ---- */
   .ring-wrap{
     position:relative;
-    width:min(88vw,92vh);
-    height:min(88vw,92vh);
+    width:min(80vw,62vh);
+    height:min(80vw,62vh);
     display:flex;
     align-items:center;
     justify-content:center;
+    flex:none;
   }
   svg.ring{
     position:absolute;
     inset:0;
     transform:rotate(-90deg);
+    pointer-events:none;
   }
   .ring-track{fill:none;stroke:var(--ring-track);stroke-width:3;}
   .ring-progress{
@@ -119,6 +124,7 @@
     flex-direction:column;
     align-items:center;
     z-index:2;
+    pointer-events:none;
   }
   .sign{
     font-family:'SFMono-Regular','Consolas','Menlo','Courier New',monospace;
@@ -134,7 +140,7 @@
   .digits{
     font-family:'SFMono-Regular','Consolas','Menlo','Courier New',monospace;
     font-weight:700;
-    font-size:clamp(120px,24vw,480px);
+    font-size:min(19vw,15vh);
     line-height:1;
     letter-spacing:.01em;
     font-variant-numeric:tabular-nums;
@@ -166,6 +172,8 @@
     display:flex;
     gap:12px;
     margin-top:18px;
+    position:relative;
+    z-index:5;
   }
   .ctrl-btn{
     background:var(--bg-2);
@@ -190,16 +198,21 @@
 
   .hint{
     position:absolute;
-    bottom:20px;
+    bottom:16px;
+    left:0;
+    right:0;
+    text-align:center;
     font-size:12px;
     color:var(--ink-dim);
     letter-spacing:.04em;
+    pointer-events:none;
   }
 
   .fs-btn{
     position:absolute;
     top:20px;
     right:20px;
+    z-index:5;
     background:transparent;
     border:1px solid var(--line);
     color:var(--ink-dim);
