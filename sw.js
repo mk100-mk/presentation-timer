@@ -1,4 +1,4 @@
-const CACHE = 'presentation-timer-v2';
+const CACHE = 'presentation-timer-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {

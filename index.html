@@ -32,16 +32,28 @@
     background:var(--bg);
     color:var(--ink);
     font-family:-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
-    overflow:hidden;
+    overflow-x:hidden;
+    overflow-y:auto;
   }
   .stage{
-    height:100vh;
+    min-height:100vh;
+    min-height:100dvh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     position:relative;
     padding:24px;
+  }
+
+  /* Landscape on short screens (phones/tablets rotated): the 92vh ring
+     plus setup bar and controls no longer all fit vertically — shrink
+     everything so the whole layout stays within view without scrolling. */
+  @media (orientation:landscape) and (max-height:600px){
+    .stage{padding:12px;}
+    .setup{margin-bottom:10px;}
+    .controls{margin-top:10px;}
+    .hint{display:none;}
   }
 
   /* ---- setup bar ---- */
@@ -107,6 +119,12 @@
     align-items:center;
     justify-content:center;
   }
+  @media (orientation:landscape) and (max-height:600px){
+    .ring-wrap{
+      width:min(42vw,62vh);
+      height:min(42vw,62vh);
+    }
+  }
   svg.ring{
     position:absolute;
     inset:0;
@@ -149,6 +167,9 @@
     font-variant-numeric:tabular-nums;
     color:var(--ink);
     transition:color .5s ease;
+  }
+  @media (orientation:landscape) and (max-height:600px){
+    .digits{font-size:clamp(50px,10vw,180px);}
   }
   .ring-wrap.warn .digits{color:var(--warn);}
   .ring-wrap.over .digits{color:var(--over);}
@@ -348,6 +369,21 @@
     beep(880, now + 0.24, 0.16);
     beep(1046, now + 0.48, 0.3);
   }
+  function playOvertimeReminder(){
+    // fires every 3 minutes into overtime — two calm-but-clear beeps
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    beep(740, now, 0.18);
+    beep(740, now + 0.28, 0.18);
+  }
+  function playSevereOvertimeAlarm(){
+    // fires at 15 min overtime (and every 3 min after) — urgent rapid high-pitch alarm
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    for(let i = 0; i < 8; i++){
+      beep(1568, now + i * 0.14, 0.09);
+    }
+  }
 
   function fmt(sec){
     const s = Math.abs(sec);
@@ -365,7 +401,8 @@
     if(overtime){
       signEl.classList.add('show');
       digitsEl.textContent = '+' + fmt(remaining);
-      statusEl.textContent = '已超時';
+      const otSec = -remaining;
+      statusEl.textContent = otSec >= 900 ? '已嚴重超時' : '已超時';
       ringProgress.style.strokeDashoffset = '0';
       ringWrap.classList.remove('warn');
       if(!hasFlashedOvertime){
@@ -396,6 +433,15 @@
     remaining -= 1;
     if(remaining === 0){
       playZeroAlert();
+    } else if(remaining < 0){
+      const otSec = -remaining;
+      if(otSec % 180 === 0){
+        if(otSec >= 900){
+          playSevereOvertimeAlarm();
+        } else {
+          playOvertimeReminder();
+        }
+      }
     }
     render();
   }
