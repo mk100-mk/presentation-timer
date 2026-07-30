@@ -2,8 +2,17 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>簡報計時器</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#12151a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="簡報計時">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="dark">
 <style>
   :root{
     --bg:#12151a;
@@ -26,13 +35,13 @@
     overflow:hidden;
   }
   .stage{
-    min-height:100vh;
+    height:100vh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     position:relative;
-    padding:16px 24px 56px;
+    padding:24px;
   }
 
   /* ---- setup bar ---- */
@@ -45,9 +54,6 @@
     border-radius:14px;
     padding:8px 16px;
     margin-bottom:16px;
-    position:relative;
-    z-index:5;
-    flex:none;
     transition:opacity .35s ease, transform .35s ease;
   }
   .setup.hidden{
@@ -95,18 +101,16 @@
   /* ---- ring + clock ---- */
   .ring-wrap{
     position:relative;
-    width:min(80vw,62vh);
-    height:min(80vw,62vh);
+    width:min(88vw,92vh);
+    height:min(88vw,92vh);
     display:flex;
     align-items:center;
     justify-content:center;
-    flex:none;
   }
   svg.ring{
     position:absolute;
     inset:0;
     transform:rotate(-90deg);
-    pointer-events:none;
   }
   .ring-track{fill:none;stroke:var(--ring-track);stroke-width:3;}
   .ring-progress{
@@ -124,7 +128,6 @@
     flex-direction:column;
     align-items:center;
     z-index:2;
-    pointer-events:none;
   }
   .sign{
     font-family:'SFMono-Regular','Consolas','Menlo','Courier New',monospace;
@@ -140,7 +143,7 @@
   .digits{
     font-family:'SFMono-Regular','Consolas','Menlo','Courier New',monospace;
     font-weight:700;
-    font-size:min(19vw,15vh);
+    font-size:clamp(120px,24vw,480px);
     line-height:1;
     letter-spacing:.01em;
     font-variant-numeric:tabular-nums;
@@ -170,23 +173,31 @@
   /* ---- controls ---- */
   .controls{
     display:flex;
-    gap:12px;
-    margin-top:18px;
-    position:relative;
-    z-index:5;
+    gap:14px;
+    margin-top:20px;
   }
   .ctrl-btn{
     background:var(--bg-2);
     border:1px solid var(--line);
     color:var(--ink);
-    border-radius:12px;
-    padding:12px 26px;
+    border-radius:16px;
+    padding:16px 28px;
+    min-width:104px;
+    min-height:64px;
     font-size:15px;
     font-weight:500;
     cursor:pointer;
     transition:.15s;
     font-family:-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
   }
+  .ctrl-btn .icon{font-size:22px;line-height:1;}
   .ctrl-btn:hover{border-color:var(--run);}
   .ctrl-btn.primary{
     background:var(--run);
@@ -194,25 +205,33 @@
     color:#08211d;
   }
   .ctrl-btn.primary:hover{filter:brightness(1.08);}
-  .ctrl-btn:active{transform:scale(.97);}
+  .ctrl-btn.danger{
+    color:var(--over);
+  }
+  .ctrl-btn.danger:hover{border-color:var(--over);}
+  .ctrl-btn:active{transform:scale(.96);}
+  .ctrl-btn:disabled{
+    opacity:.32;
+    cursor:default;
+    transform:none;
+    border-color:var(--line);
+    background:var(--bg-2);
+    color:var(--ink-dim);
+  }
+  .ctrl-btn:disabled:hover{border-color:var(--line);}
 
   .hint{
     position:absolute;
-    bottom:16px;
-    left:0;
-    right:0;
-    text-align:center;
+    bottom:20px;
     font-size:12px;
     color:var(--ink-dim);
     letter-spacing:.04em;
-    pointer-events:none;
   }
 
   .fs-btn{
     position:absolute;
     top:20px;
     right:20px;
-    z-index:5;
     background:transparent;
     border:1px solid var(--line);
     color:var(--ink-dim);
@@ -233,7 +252,7 @@
   }
 </style>
 </head>
-<body>
+<body style="background:#12151a;color:#f2f4f7;margin:0;">
 
 <div class="stage">
   <button class="fs-btn" id="fsBtn" title="全螢幕">⤢</button>
@@ -267,11 +286,11 @@
   </div>
 
   <div class="controls">
-    <button class="ctrl-btn primary" id="startBtn">開始</button>
-    <button class="ctrl-btn" id="resetBtn">重設</button>
+    <button class="ctrl-btn primary" id="startBtn"><span class="icon">▶</span>開始</button>
+    <button class="ctrl-btn danger" id="resetBtn"><span class="icon">↻</span>重設</button>
   </div>
 
-  <div class="hint">空白鍵：開始／暫停　·　R：重設　·　點右上角切換全螢幕</div>
+  <div class="hint">點畫面按鈕操作，或用空白鍵開始／暫停、R 鍵重設　·　點右上角切換全螢幕</div>
 </div>
 
 <script>
@@ -386,7 +405,7 @@
     ensureAudio();
     running = true;
     setupEl.classList.add('hidden');
-    startBtn.textContent = '暫停';
+    startBtn.innerHTML = '<span class="icon">⏸</span>暫停';
     tickHandle = setInterval(tick, 1000);
     statusEl.textContent = '進行中';
   }
@@ -394,7 +413,7 @@
   function pause(){
     running = false;
     clearInterval(tickHandle);
-    startBtn.textContent = '繼續';
+    startBtn.innerHTML = '<span class="icon">▶</span>繼續';
     statusEl.textContent = '已暫停';
   }
 
@@ -406,7 +425,7 @@
     const s = Math.max(0, Math.min(59, parseInt(secInput.value,10) || 0));
     totalSeconds = m * 60 + s;
     remaining = totalSeconds;
-    startBtn.textContent = '開始';
+    startBtn.innerHTML = '<span class="icon">▶</span>開始';
     setupEl.classList.remove('hidden');
     render();
   }
@@ -440,6 +459,12 @@
   });
 
   reset();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
 })();
 </script>
 
