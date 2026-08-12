@@ -349,9 +349,11 @@
     }
   }
 
-  // Keep the screen awake while a countdown is running, so the device never
-  // sleeps mid-timer and silently suspends the audio engine between speakers.
+  // Keep the screen awake for the whole session once the operator has started
+  // it at least once — including during pauses (intermission between
+  // speakers). Only actually released when the page/tab itself is closed.
   let wakeLock = null;
+  let wakeLockDesired = false;
   async function requestWakeLock(){
     try{
       if('wakeLock' in navigator){
@@ -359,20 +361,14 @@
       }
     }catch(e){ /* not supported / denied — visibilitychange fallback below still covers us */ }
   }
-  function releaseWakeLock(){
-    if(wakeLock){
-      wakeLock.release().catch(()=>{});
-      wakeLock = null;
-    }
-  }
-  // Safety net: if the screen still locks/backgrounds for any reason (wake
-  // lock unsupported, released by the OS, low battery, etc.), re-unlock audio
-  // and re-acquire the wake lock the moment the page is visible again —
-  // no need to fully close and reopen the app between speakers.
+  // Safety net: if the lock is ever lost for any reason (backgrounded, OS
+  // reclaimed it, low battery, etc.), re-unlock audio and re-acquire the
+  // wake lock the moment the page is visible again — no need to fully close
+  // and reopen the app between speakers or after a break.
   document.addEventListener('visibilitychange', () => {
     if(document.visibilityState === 'visible'){
       ensureAudio();
-      if(running) requestWakeLock();
+      if(wakeLockDesired) requestWakeLock();
     }
   });
   function beep(freq, startTime, duration){
@@ -477,6 +473,7 @@
   function start(){
     if(running) return;
     ensureAudio();
+    wakeLockDesired = true;
     requestWakeLock();
     running = true;
     setupEl.classList.add('hidden');
@@ -488,7 +485,8 @@
   function pause(){
     running = false;
     clearInterval(tickHandle);
-    releaseWakeLock();
+    // wake lock intentionally kept — screen should stay awake through
+    // intermission too, not just while actively counting down
     startBtn.innerHTML = '<span class="icon">▶</span>繼續';
     statusEl.textContent = '已暫停';
   }
@@ -496,7 +494,7 @@
   function reset(){
     running = false;
     clearInterval(tickHandle);
-    releaseWakeLock();
+    // wake lock intentionally kept across resets within the same session
     hasFlashedOvertime = false;
     const m = Math.max(0, Math.min(180, parseInt(minInput.value,10) || 0));
     const s = Math.max(0, Math.min(59, parseInt(secInput.value,10) || 0));
