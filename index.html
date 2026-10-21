@@ -371,19 +371,27 @@
       if(wakeLockDesired) requestWakeLock();
     }
   });
-  function beep(freq, startTime, duration){
+  function beep(freq, startTime, duration, volume){
     if(!audioCtx) return;
+    const peak = (typeof volume === 'number') ? volume : 0.35;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(0.35, startTime + 0.02);
+    gain.gain.linearRampToValueAtTime(peak, startTime + 0.02);
     gain.gain.linearRampToValueAtTime(0, startTime + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(startTime);
     osc.stop(startTime + duration + 0.02);
+  }
+  function playFiveMinuteNotice(){
+    // 5 minutes remaining — soft two-note rising chime, quieter than alarms
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    beep(523, now, 0.32, 0.22);
+    beep(659, now + 0.36, 0.45, 0.22);
   }
   function playZeroAlert(){
     if(!audioCtx) return;
@@ -447,7 +455,8 @@
     if(!running && remaining === totalSeconds){
       statusEl.textContent = '準備開始';
     } else if(running){
-      statusEl.textContent = warn ? '即將結束' : '進行中';
+      const lastFive = totalSeconds > 300 && remaining <= 300 && remaining > 60;
+      statusEl.textContent = warn ? '即將結束' : (lastFive ? '剩餘 5 分鐘內' : '進行中');
     } else {
       statusEl.textContent = '已暫停';
     }
@@ -455,7 +464,9 @@
 
   function tick(){
     remaining -= 1;
-    if(remaining === 0){
+    if(remaining === 300){
+      playFiveMinuteNotice();
+    } else if(remaining === 0){
       playZeroAlert();
     } else if(remaining < 0){
       const otSec = -remaining;
